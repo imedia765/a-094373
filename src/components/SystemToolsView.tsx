@@ -10,6 +10,7 @@ const SystemToolsView = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [isCheckingMembers, setIsCheckingMembers] = useState(false);
   const [isAuditingSecurity, setIsAuditingSecurity] = useState(false);
 
   // Check auth status and invalidate queries when component mounts
@@ -46,6 +47,26 @@ const SystemToolsView = () => {
     checkAuth();
   }, [queryClient, toast, navigate]);
 
+  const handleCheckComplete = (success: boolean) => {
+    toast({
+      title: success ? "Member Check Complete" : "Error Checking Members",
+      description: success 
+        ? "Member number verification has been completed."
+        : "An error occurred while checking members.",
+      variant: success ? "default" : "destructive",
+    });
+  };
+
+  const handleAuditComplete = (success: boolean) => {
+    toast({
+      title: success ? "Security Audit Complete" : "Error Running Security Audit",
+      description: success 
+        ? "Security settings have been audited."
+        : "An error occurred while running the security audit.",
+      variant: success ? "default" : "destructive",
+    });
+  };
+
   return (
     <div className="space-y-8">
       <header>
@@ -54,10 +75,15 @@ const SystemToolsView = () => {
       </header>
 
       <div className="grid gap-6">
-        <MemberNumberVerification />
+        <MemberNumberVerification 
+          isCheckingMembers={isCheckingMembers}
+          setIsCheckingMembers={setIsCheckingMembers}
+          onCheckComplete={handleCheckComplete}
+        />
         <SecurityAudit 
-          isAuditing={isAuditingSecurity}
-          setIsAuditing={setIsAuditingSecurity}
+          isAuditingSecurity={isAuditingSecurity}
+          setIsAuditingSecurity={setIsAuditingSecurity}
+          onAuditComplete={handleAuditComplete}
         />
       </div>
     </div>
