@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from '@tanstack/react-query';
 import MemberNumberVerification from './system/MemberNumberVerification';
@@ -11,7 +11,7 @@ const SystemToolsView = () => {
   const [isAuditingSecurity, setIsAuditingSecurity] = useState(false);
 
   // Invalidate queries when component mounts to ensure fresh data
-  useState(() => {
+  useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ['security_audit'] });
     queryClient.invalidateQueries({ queryKey: ['member_number_check'] });
   }, [queryClient]);
