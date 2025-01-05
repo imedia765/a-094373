@@ -76,19 +76,22 @@ const SystemToolsView = () => {
       const { data: roleData, error: roleError } = await supabase.rpc('validate_user_roles');
       if (roleError) throw roleError;
 
-      // Combine all checks
-      const allChecks = [
+      // Transform member data to match SystemCheck interface
+      const memberChecks = (memberData || []).map((check: any) => ({
+        check_type: check.issue_type,
+        status: 'Warning',
+        details: {
+          description: check.description,
+          affected_table: check.affected_table,
+          member_number: check.member_number,
+          ...check.details
+        }
+      }));
+
+      // Combine all checks ensuring they match SystemCheck interface
+      const allChecks: SystemCheck[] = [
         ...(securityData || []),
-        ...(memberData || []).map((check: any) => ({
-          check_type: check.issue_type,
-          status: 'Warning',
-          details: {
-            description: check.description,
-            affected_table: check.affected_table,
-            member_number: check.member_number,
-            ...check.details
-          }
-        })),
+        ...memberChecks,
         ...(roleData || [])
       ];
 
