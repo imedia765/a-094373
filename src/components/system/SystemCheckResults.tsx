@@ -52,21 +52,21 @@ const SystemCheckResults = ({ checks }: SystemCheckResultsProps) => {
     // Handle collector role issues
     if (checkType === 'Collectors Without Role' && Array.isArray(details)) {
       return (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Collector Name</TableHead>
-              <TableHead>Member Number</TableHead>
-              <TableHead>Status</TableHead>
+        <Table className="border-collapse">
+          <TableHeader className="bg-dashboard-card/50">
+            <TableRow className="border-b border-white/10">
+              <TableHead className="py-2">Collector Name</TableHead>
+              <TableHead className="py-2">Member Number</TableHead>
+              <TableHead className="py-2">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {details.map((item: any, index: number) => (
-              <TableRow key={index}>
-                <TableCell className="font-medium">{item.collector_name}</TableCell>
-                <TableCell>{item.member_number || 'Not Assigned'}</TableCell>
-                <TableCell>
-                  <span className="px-2 py-1 rounded-full bg-yellow-500/10 text-yellow-500 text-sm">
+              <TableRow key={index} className="border-b border-white/5 hover:bg-dashboard-card/80">
+                <TableCell className="py-1.5">{item.collector_name}</TableCell>
+                <TableCell className="py-1.5">{item.member_number || 'Not Assigned'}</TableCell>
+                <TableCell className="py-1.5">
+                  <span className="px-2 py-0.5 rounded-full text-xs bg-yellow-500/10 text-yellow-500">
                     Warning
                   </span>
                 </TableCell>
@@ -80,20 +80,20 @@ const SystemCheckResults = ({ checks }: SystemCheckResultsProps) => {
     // Handle multiple roles
     if (checkType === 'Multiple Roles Assigned') {
       return (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>User ID</TableHead>
-              <TableHead>Roles</TableHead>
-              <TableHead>Created</TableHead>
+        <Table className="border-collapse">
+          <TableHeader className="bg-dashboard-card/50">
+            <TableRow className="border-b border-white/10">
+              <TableHead className="py-2">User ID</TableHead>
+              <TableHead className="py-2">Roles</TableHead>
+              <TableHead className="py-2">Created</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {Array.isArray(details) ? details.map((item: any, index: number) => (
-              <TableRow key={index}>
-                <TableCell className="font-medium">{item.user_id}</TableCell>
-                <TableCell>{Array.isArray(item.roles) ? item.roles.join(', ') : item.roles}</TableCell>
-                <TableCell>
+              <TableRow key={index} className="border-b border-white/5 hover:bg-dashboard-card/80">
+                <TableCell className="py-1.5 text-xs">{item.user_id}</TableCell>
+                <TableCell className="py-1.5">{Array.isArray(item.roles) ? item.roles.join(', ') : item.roles}</TableCell>
+                <TableCell className="py-1.5 text-xs">
                   {Array.isArray(item.created_at) 
                     ? item.created_at.map((date: string) => 
                         new Date(date).toLocaleDateString()
@@ -102,10 +102,10 @@ const SystemCheckResults = ({ checks }: SystemCheckResultsProps) => {
                 </TableCell>
               </TableRow>
             )) : (
-              <TableRow>
-                <TableCell className="font-medium">{details.user_id}</TableCell>
-                <TableCell>{Array.isArray(details.roles) ? details.roles.join(', ') : details.roles}</TableCell>
-                <TableCell>
+              <TableRow className="border-b border-white/5">
+                <TableCell className="py-1.5 text-xs">{details.user_id}</TableCell>
+                <TableCell className="py-1.5">{Array.isArray(details.roles) ? details.roles.join(', ') : details.roles}</TableCell>
+                <TableCell className="py-1.5 text-xs">
                   {Array.isArray(details.created_at) 
                     ? details.created_at.map((date: string) => 
                         new Date(date).toLocaleDateString()
@@ -130,7 +130,7 @@ const SystemCheckResults = ({ checks }: SystemCheckResultsProps) => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {Object.entries(groupedChecks).map(([checkType, checksOfType], index) => (
         <Card 
           key={index}
@@ -148,7 +148,7 @@ const SystemCheckResults = ({ checks }: SystemCheckResultsProps) => {
             </div>
           </CardHeader>
           <CardContent className="pt-2">
-            <div className="text-sm space-y-2">
+            <div className="text-sm">
               {formatDetails(checkType, checksOfType.length === 1 ? checksOfType[0].details : checksOfType.map(c => c.details))}
             </div>
           </CardContent>
