@@ -39,22 +39,37 @@ const SystemCheckResults = ({ checks }: SystemCheckResultsProps) => {
     }
   };
 
-  const formatDetails = (details: any) => {
+  // Group checks by check_type
+  const groupedChecks = checks.reduce((acc: { [key: string]: SystemCheck[] }, check) => {
+    if (!acc[check.check_type]) {
+      acc[check.check_type] = [];
+    }
+    acc[check.check_type].push(check);
+    return acc;
+  }, {});
+
+  const formatDetails = (checkType: string, details: any) => {
     // Handle collector role issues
-    if (Array.isArray(details) && details.length > 0 && details[0].collector_name) {
+    if (checkType === 'Collectors Without Role' && Array.isArray(details)) {
       return (
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Collector Name</TableHead>
               <TableHead>Member Number</TableHead>
+              <TableHead>Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {details.map((item: any, index: number) => (
               <TableRow key={index}>
-                <TableCell>{item.collector_name}</TableCell>
+                <TableCell className="font-medium">{item.collector_name}</TableCell>
                 <TableCell>{item.member_number || 'Not Assigned'}</TableCell>
+                <TableCell>
+                  <span className="px-2 py-1 rounded-full bg-yellow-500/10 text-yellow-500 text-sm">
+                    Warning
+                  </span>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -63,28 +78,44 @@ const SystemCheckResults = ({ checks }: SystemCheckResultsProps) => {
     }
 
     // Handle multiple roles
-    if (details.roles && Array.isArray(details.roles)) {
+    if (checkType === 'Multiple Roles Assigned') {
       return (
-        <div className="space-y-2">
-          <div>
-            <span className="font-medium text-dashboard-accent1">Roles:</span>{' '}
-            <span className="text-dashboard-text">{details.roles.join(', ')}</span>
-          </div>
-          <div>
-            <span className="font-medium text-dashboard-accent1">User ID:</span>{' '}
-            <span className="text-dashboard-text">{details.user_id}</span>
-          </div>
-          <div>
-            <span className="font-medium text-dashboard-accent1">Created:</span>{' '}
-            <span className="text-dashboard-text">
-              {Array.isArray(details.created_at) 
-                ? details.created_at.map((date: string) => 
-                    new Date(date).toLocaleDateString()
-                  ).join(', ')
-                : new Date(details.created_at).toLocaleDateString()}
-            </span>
-          </div>
-        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>User ID</TableHead>
+              <TableHead>Roles</TableHead>
+              <TableHead>Created</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.isArray(details) ? details.map((item: any, index: number) => (
+              <TableRow key={index}>
+                <TableCell className="font-medium">{item.user_id}</TableCell>
+                <TableCell>{Array.isArray(item.roles) ? item.roles.join(', ') : item.roles}</TableCell>
+                <TableCell>
+                  {Array.isArray(item.created_at) 
+                    ? item.created_at.map((date: string) => 
+                        new Date(date).toLocaleDateString()
+                      ).join(', ')
+                    : new Date(item.created_at).toLocaleDateString()}
+                </TableCell>
+              </TableRow>
+            )) : (
+              <TableRow>
+                <TableCell className="font-medium">{details.user_id}</TableCell>
+                <TableCell>{Array.isArray(details.roles) ? details.roles.join(', ') : details.roles}</TableCell>
+                <TableCell>
+                  {Array.isArray(details.created_at) 
+                    ? details.created_at.map((date: string) => 
+                        new Date(date).toLocaleDateString()
+                      ).join(', ')
+                    : new Date(details.created_at).toLocaleDateString()}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       );
     }
 
@@ -100,25 +131,25 @@ const SystemCheckResults = ({ checks }: SystemCheckResultsProps) => {
 
   return (
     <div className="space-y-4">
-      {checks.map((check, index) => (
+      {Object.entries(groupedChecks).map(([checkType, checksOfType], index) => (
         <Card 
           key={index}
-          className={`border ${getStatusColor(check.status)} bg-dashboard-card/50`}
+          className={`border ${getStatusColor(checksOfType[0].status)} bg-dashboard-card/50`}
         >
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
-              {getStatusIcon(check.status)}
+              {getStatusIcon(checksOfType[0].status)}
               <CardTitle className="text-lg">
-                {check.check_type}
-                <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${getStatusColor(check.status)}`}>
-                  {check.status}
+                {checkType}
+                <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${getStatusColor(checksOfType[0].status)}`}>
+                  {checksOfType[0].status}
                 </span>
               </CardTitle>
             </div>
           </CardHeader>
           <CardContent className="pt-2">
             <div className="text-sm space-y-2">
-              {formatDetails(check.details)}
+              {formatDetails(checkType, checksOfType.length === 1 ? checksOfType[0].details : checksOfType.map(c => c.details))}
             </div>
           </CardContent>
         </Card>
