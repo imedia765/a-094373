@@ -1,6 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertTriangle, CheckCircle2, Info, XCircle } from "lucide-react";
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from "@/integrations/supabase/client";
 
 interface SystemCheck {
   check_type: string;
@@ -13,6 +15,23 @@ interface SystemCheckResultsProps {
 }
 
 const SystemCheckResults = ({ checks }: SystemCheckResultsProps) => {
+  // Query to fetch member names
+  const { data: memberNames } = useQuery({
+    queryKey: ['member-names'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('members')
+        .select('auth_user_id, full_name');
+      if (error) throw error;
+      return data.reduce((acc: { [key: string]: string }, member) => {
+        if (member.auth_user_id) {
+          acc[member.auth_user_id] = member.full_name;
+        }
+        return acc;
+      }, {});
+    }
+  });
+
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
       case 'critical':
@@ -38,15 +57,6 @@ const SystemCheckResults = ({ checks }: SystemCheckResultsProps) => {
         return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
     }
   };
-
-  // Group checks by check_type
-  const groupedChecks = checks.reduce((acc: { [key: string]: SystemCheck[] }, check) => {
-    if (!acc[check.check_type]) {
-      acc[check.check_type] = [];
-    }
-    acc[check.check_type].push(check);
-    return acc;
-  }, {});
 
   const formatDetails = (checkType: string, details: any) => {
     // Handle collector role issues
@@ -83,6 +93,7 @@ const SystemCheckResults = ({ checks }: SystemCheckResultsProps) => {
         <Table className="border-collapse">
           <TableHeader className="bg-dashboard-card/50">
             <TableRow className="border-b border-white/10">
+              <TableHead className="py-2">Member Name</TableHead>
               <TableHead className="py-2">User ID</TableHead>
               <TableHead className="py-2">Roles</TableHead>
               <TableHead className="py-2">Created</TableHead>
@@ -91,6 +102,9 @@ const SystemCheckResults = ({ checks }: SystemCheckResultsProps) => {
           <TableBody>
             {Array.isArray(details) ? details.map((item: any, index: number) => (
               <TableRow key={index} className="border-b border-white/5 hover:bg-dashboard-card/80">
+                <TableCell className="py-1.5 text-dashboard-accent1 font-medium">
+                  {memberNames?.[item.user_id] || 'Unknown Member'}
+                </TableCell>
                 <TableCell className="py-1.5 text-xs">{item.user_id}</TableCell>
                 <TableCell className="py-1.5">{Array.isArray(item.roles) ? item.roles.join(', ') : item.roles}</TableCell>
                 <TableCell className="py-1.5 text-xs">
@@ -103,6 +117,9 @@ const SystemCheckResults = ({ checks }: SystemCheckResultsProps) => {
               </TableRow>
             )) : (
               <TableRow className="border-b border-white/5">
+                <TableCell className="py-1.5 text-dashboard-accent1 font-medium">
+                  {memberNames?.[details.user_id] || 'Unknown Member'}
+                </TableCell>
                 <TableCell className="py-1.5 text-xs">{details.user_id}</TableCell>
                 <TableCell className="py-1.5">{Array.isArray(details.roles) ? details.roles.join(', ') : details.roles}</TableCell>
                 <TableCell className="py-1.5 text-xs">
@@ -128,6 +145,15 @@ const SystemCheckResults = ({ checks }: SystemCheckResultsProps) => {
       </div>
     ));
   };
+
+  // Group checks by check_type
+  const groupedChecks = checks.reduce((acc: { [key: string]: SystemCheck[] }, check) => {
+    if (!acc[check.check_type]) {
+      acc[check.check_type] = [];
+    }
+    acc[check.check_type].push(check);
+    return acc;
+  }, {});
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
