@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertTriangle, CheckCircle2, Info, XCircle } from "lucide-react";
 
 interface SystemCheck {
@@ -39,6 +40,55 @@ const SystemCheckResults = ({ checks }: SystemCheckResultsProps) => {
   };
 
   const formatDetails = (details: any) => {
+    // Handle collector role issues
+    if (Array.isArray(details) && details.length > 0 && details[0].collector_name) {
+      return (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Collector Name</TableHead>
+              <TableHead>Member Number</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {details.map((item: any, index: number) => (
+              <TableRow key={index}>
+                <TableCell>{item.collector_name}</TableCell>
+                <TableCell>{item.member_number || 'Not Assigned'}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      );
+    }
+
+    // Handle multiple roles
+    if (details.roles && Array.isArray(details.roles)) {
+      return (
+        <div className="space-y-2">
+          <div>
+            <span className="font-medium text-dashboard-accent1">Roles:</span>{' '}
+            <span className="text-dashboard-text">{details.roles.join(', ')}</span>
+          </div>
+          <div>
+            <span className="font-medium text-dashboard-accent1">User ID:</span>{' '}
+            <span className="text-dashboard-text">{details.user_id}</span>
+          </div>
+          <div>
+            <span className="font-medium text-dashboard-accent1">Created:</span>{' '}
+            <span className="text-dashboard-text">
+              {Array.isArray(details.created_at) 
+                ? details.created_at.map((date: string) => 
+                    new Date(date).toLocaleDateString()
+                  ).join(', ')
+                : new Date(details.created_at).toLocaleDateString()}
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    // Default formatting for other types of details
     if (typeof details === 'string') return details;
     return Object.entries(details).map(([key, value]) => (
       <div key={key} className="mb-1">
