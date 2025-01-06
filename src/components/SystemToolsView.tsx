@@ -17,7 +17,17 @@ interface SystemCheck {
   details: any;
 }
 
-const CHECKS = [
+interface MemberNumberCheck {
+  issue_type: string;
+  description: string;
+  affected_table: string;
+  member_number: string;
+  details: any;
+}
+
+type CheckFunction = 'audit_security_settings' | 'check_member_numbers' | 'validate_user_roles';
+
+const CHECKS: Array<{ name: string; fn: CheckFunction }> = [
   { name: 'Security Audit', fn: 'audit_security_settings' },
   { name: 'Member Number Verification', fn: 'check_member_numbers' },
   { name: 'Role Validation', fn: 'validate_user_roles' }
@@ -79,24 +89,23 @@ const SystemToolsView = () => {
         const { data, error } = await supabase.rpc(check.fn);
         if (error) throw error;
 
-        // Transform member data if needed
-        const transformedData = check.fn === 'check_member_numbers' 
-          ? (data || []).map((check: any) => ({
-              check_type: check.issue_type,
-              status: 'Warning',
-              details: {
-                description: check.description,
-                affected_table: check.affected_table,
-                member_number: check.member_number,
-                ...check.details
-              }
-            }))
-          : data;
-
-        allChecks = [...allChecks, ...transformedData];
-        setCompletedChecks(prev => prev + 1);
+        if (check.fn === 'check_member_numbers') {
+          const memberChecks = (data as MemberNumberCheck[]).map(check => ({
+            check_type: check.issue_type,
+            status: 'Warning',
+            details: {
+              description: check.description,
+              affected_table: check.affected_table,
+              member_number: check.member_number,
+              ...check.details
+            }
+          }));
+          allChecks = [...allChecks, ...memberChecks];
+        } else {
+          allChecks = [...allChecks, ...(data as SystemCheck[])];
+        }
         
-        // Add a small delay between checks
+        setCompletedChecks(prev => prev + 1);
         await delay(800);
       }
 
