@@ -18,53 +18,90 @@ const CollectorFinancialsView = () => {
     queryFn: async () => {
       console.log('Fetching financial totals');
       
-      // Use count option to get all records
-      const { data: payments, error: paymentsError, count: paymentsCount } = await supabase
-        .from('payment_requests')
-        .select('amount, status, payment_type', { count: 'exact' });
+      // Fetch all payments with pagination
+      let allPayments = [];
+      let page = 0;
+      const pageSize = 1000;
       
-      if (paymentsError) {
-        console.error('Error fetching payments:', paymentsError);
-        throw paymentsError;
+      while (true) {
+        const { data: payments, error: paymentsError, count } = await supabase
+          .from('payment_requests')
+          .select('amount, status, payment_type', { count: 'exact' })
+          .range(page * pageSize, (page + 1) * pageSize - 1);
+        
+        if (paymentsError) {
+          console.error('Error fetching payments:', paymentsError);
+          throw paymentsError;
+        }
+
+        if (!payments || payments.length === 0) break;
+        
+        allPayments = [...allPayments, ...payments];
+        if (payments.length < pageSize) break;
+        page++;
       }
 
-      // Use count option to get all records
-      const { data: collectors, error: collectorsError, count: collectorsCount } = await supabase
-        .from('members_collectors')
-        .select('*', { count: 'exact' });
+      // Fetch all collectors with pagination
+      let allCollectors = [];
+      page = 0;
+      
+      while (true) {
+        const { data: collectors, error: collectorsError } = await supabase
+          .from('members_collectors')
+          .select('*')
+          .range(page * pageSize, (page + 1) * pageSize - 1);
+        
+        if (collectorsError) {
+          console.error('Error fetching collectors:', collectorsError);
+          throw collectorsError;
+        }
 
-      if (collectorsError) {
-        console.error('Error fetching collectors:', collectorsError);
-        throw collectorsError;
+        if (!collectors || collectors.length === 0) break;
+        
+        allCollectors = [...allCollectors, ...collectors];
+        if (collectors.length < pageSize) break;
+        page++;
       }
 
-      // Use count option to get all records
-      const { data: members, error: membersError, count: membersCount } = await supabase
-        .from('members')
-        .select('yearly_payment_amount, emergency_collection_amount, yearly_payment_status, emergency_collection_status', { count: 'exact' });
+      // Fetch all members with pagination
+      let allMembers = [];
+      page = 0;
+      
+      while (true) {
+        const { data: members, error: membersError } = await supabase
+          .from('members')
+          .select('yearly_payment_amount, emergency_collection_amount, yearly_payment_status, emergency_collection_status')
+          .range(page * pageSize, (page + 1) * pageSize - 1);
+        
+        if (membersError) {
+          console.error('Error fetching members:', membersError);
+          throw membersError;
+        }
 
-      if (membersError) {
-        console.error('Error fetching members:', membersError);
-        throw membersError;
+        if (!members || members.length === 0) break;
+        
+        allMembers = [...allMembers, ...members];
+        if (members.length < pageSize) break;
+        page++;
       }
 
-      console.log('Total payments found:', paymentsCount);
-      console.log('Total collectors found:', collectorsCount);
-      console.log('Total members found:', membersCount);
+      console.log('Total payments found:', allPayments.length);
+      console.log('Total collectors found:', allCollectors.length);
+      console.log('Total members found:', allMembers.length);
 
-      const totalAmount = payments?.reduce((sum, payment) => 
+      const totalAmount = allPayments.reduce((sum, payment) => 
         payment.status === 'approved' ? sum + Number(payment.amount) : sum, 0
       ) || 0;
 
-      const pendingAmount = payments?.reduce((sum, payment) => 
+      const pendingAmount = allPayments.reduce((sum, payment) => 
         payment.status === 'pending' ? sum + Number(payment.amount) : sum, 0
       ) || 0;
 
-      const totalYearlyDue = members?.reduce((sum, member) => 
+      const totalYearlyDue = allMembers.reduce((sum, member) => 
         sum + (member.yearly_payment_amount || 40), 0
       ) || 0;
 
-      const totalEmergencyDue = members?.reduce((sum, member) => 
+      const totalEmergencyDue = allMembers.reduce((sum, member) => 
         sum + (member.emergency_collection_amount || 0), 0
       ) || 0;
 
@@ -75,8 +112,8 @@ const CollectorFinancialsView = () => {
         totalCollected: totalAmount,
         pendingAmount: pendingAmount,
         remainingAmount: remainingCollection,
-        totalCollectors: collectors?.length || 0,
-        totalTransactions: payments?.length || 0
+        totalCollectors: allCollectors.length || 0,
+        totalTransactions: allPayments.length || 0
       };
     }
   });
