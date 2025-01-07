@@ -18,32 +18,39 @@ const CollectorFinancialsView = () => {
     queryFn: async () => {
       console.log('Fetching financial totals');
       
-      const { data: payments, error: paymentsError } = await supabase
+      // Use count option to get all records
+      const { data: payments, error: paymentsError, count: paymentsCount } = await supabase
         .from('payment_requests')
-        .select('amount, status, payment_type');
+        .select('amount, status, payment_type', { count: 'exact' });
       
       if (paymentsError) {
         console.error('Error fetching payments:', paymentsError);
         throw paymentsError;
       }
 
-      const { data: collectors, error: collectorsError } = await supabase
+      // Use count option to get all records
+      const { data: collectors, error: collectorsError, count: collectorsCount } = await supabase
         .from('members_collectors')
-        .select('*');
+        .select('*', { count: 'exact' });
 
       if (collectorsError) {
         console.error('Error fetching collectors:', collectorsError);
         throw collectorsError;
       }
 
-      const { data: members, error: membersError } = await supabase
+      // Use count option to get all records
+      const { data: members, error: membersError, count: membersCount } = await supabase
         .from('members')
-        .select('yearly_payment_amount, emergency_collection_amount, yearly_payment_status, emergency_collection_status');
+        .select('yearly_payment_amount, emergency_collection_amount, yearly_payment_status, emergency_collection_status', { count: 'exact' });
 
       if (membersError) {
         console.error('Error fetching members:', membersError);
         throw membersError;
       }
+
+      console.log('Total payments found:', paymentsCount);
+      console.log('Total collectors found:', collectorsCount);
+      console.log('Total members found:', membersCount);
 
       const totalAmount = payments?.reduce((sum, payment) => 
         payment.status === 'approved' ? sum + Number(payment.amount) : sum, 0
