@@ -1,18 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
-import { AuditLog } from '@/types/audit';
-import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ClipboardList, Activity } from 'lucide-react';
+import AuditLogsList from '@/components/logs/AuditLogsList';
+import MonitoringLogsList from '@/components/logs/MonitoringLogsList';
+import { AuditLog } from '@/types/audit';
+import { MonitoringLog } from '@/types/monitoring';
 
 const AuditLogsView = () => {
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
@@ -21,7 +16,7 @@ const AuditLogsView = () => {
     setDebugLogs(prev => [...prev, `${new Date().toISOString()} - ${message}`]);
   };
 
-  const { data: auditLogs, isLoading } = useQuery({
+  const { data: auditLogs, isLoading: isLoadingAudit } = useQuery({
     queryKey: ['auditLogs'],
     queryFn: async () => {
       console.log('Fetching audit logs...');
@@ -39,20 +34,62 @@ const AuditLogsView = () => {
       }
 
       addDebugLog(`Fetched ${data?.length || 0} audit logs`);
-      return data as AuditLog[];
+      return data?.map(log => ({
+        ...log,
+        old_values: log.old_values as Record<string, any> | null,
+        new_values: log.new_values as Record<string, any> | null
+      })) as AuditLog[];
+    },
+  });
+
+  const { data: monitoringLogs, isLoading: isLoadingMonitoring } = useQuery({
+    queryKey: ['monitoringLogs'],
+    queryFn: async () => {
+      console.log('Fetching monitoring logs...');
+      addDebugLog('Fetching monitoring logs');
+      const { data, error } = await supabase
+        .from('monitoring_logs')
+        .select('*')
+        .order('timestamp', { ascending: false })
+        .limit(100);
+
+      if (error) {
+        console.error('Error fetching monitoring logs:', error);
+        addDebugLog(`Error fetching monitoring logs: ${error.message}`);
+        throw error;
+      }
+
+      addDebugLog(`Fetched ${data?.length || 0} monitoring logs`);
+      return data?.map(log => ({
+        ...log,
+        details: log.details as Record<string, any> | null
+      })) as MonitoringLog[];
     },
   });
 
   useEffect(() => {
     addDebugLog('Setting up real-time subscription');
     const channel = supabase
-      .channel('audit-logs-changes')
+      .channel('logs-changes')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'audit_logs'
+        },
+        (payload) => {
+          addDebugLog(`Real-time update received: ${payload.eventType}`);
+          // Force a refetch when we receive updates
+          window.location.reload();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'monitoring_logs'
         },
         (payload) => {
           addDebugLog(`Real-time update received: ${payload.eventType}`);
@@ -70,90 +107,42 @@ const AuditLogsView = () => {
     };
   }, []);
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'info':
-        return 'bg-blue-500';
-      case 'warning':
-        return 'bg-yellow-500';
-      case 'error':
-        return 'bg-red-500';
-      case 'critical':
-        return 'bg-red-700';
-      default:
-        return 'bg-gray-500';
-    }
-  };
-
-  const getOperationColor = (operation: string) => {
-    switch (operation) {
-      case 'create':
-        return 'bg-green-500';
-      case 'update':
-        return 'bg-blue-500';
-      case 'delete':
-        return 'bg-red-500';
-      default:
-        return 'bg-gray-500';
-    }
-  };
-
-  if (isLoading) {
-    return <div className="text-white">Loading audit logs...</div>;
+  if (isLoadingAudit || isLoadingMonitoring) {
+    return <div className="text-white">Loading logs...</div>;
   }
 
   return (
     <>
       <header className="mb-8">
-        <h1 className="text-3xl font-medium mb-2 text-white">Audit Logs</h1>
-        <p className="text-dashboard-text">View system activity and changes</p>
+        <h1 className="text-3xl font-medium mb-2 text-white">System Logs</h1>
+        <p className="text-dashboard-text">View system activity, changes, and monitoring data</p>
       </header>
 
       <div className="space-y-6">
-        <div className="glass-card p-6">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Timestamp</TableHead>
-                <TableHead>Operation</TableHead>
-                <TableHead>Table</TableHead>
-                <TableHead>Severity</TableHead>
-                <TableHead>Changes</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {auditLogs?.map((log) => (
-                <TableRow key={log.id}>
-                  <TableCell className="text-dashboard-text">
-                    {format(new Date(log.timestamp), 'MMM d, yyyy HH:mm:ss')}
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={`${getOperationColor(log.operation)}`}>
-                      {log.operation}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-dashboard-text">
-                    {log.table_name}
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={`${getSeverityColor(log.severity)}`}>
-                      {log.severity}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-dashboard-text max-w-md truncate">
-                    {log.operation === 'update' && (
-                      <span>
-                        Changed: {Object.keys(log.new_values || {}).join(', ')}
-                      </span>
-                    )}
-                    {log.operation === 'create' && 'New record created'}
-                    {log.operation === 'delete' && 'Record deleted'}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <Tabs defaultValue="audit" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+            <TabsTrigger value="audit" className="flex items-center gap-2">
+              <ClipboardList className="w-4 h-4" />
+              Audit Logs
+            </TabsTrigger>
+            <TabsTrigger value="monitoring" className="flex items-center gap-2">
+              <Activity className="w-4 h-4" />
+              Monitoring
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="audit" className="mt-6">
+            <div className="glass-card p-6">
+              <AuditLogsList logs={auditLogs || []} />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="monitoring" className="mt-6">
+            <div className="glass-card p-6">
+              <MonitoringLogsList logs={monitoringLogs || []} />
+            </div>
+          </TabsContent>
+        </Tabs>
 
         <div className="glass-card p-6">
           <h2 className="text-xl font-medium mb-4 text-white">Debug Console</h2>
