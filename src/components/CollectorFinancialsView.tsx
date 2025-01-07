@@ -7,20 +7,36 @@ import FinancialTabs from './financials/FinancialTabs';
 const CollectorFinancialsView = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
-  const { data: totals } = useQuery({
+  const { data: totals, isLoading } = useQuery({
     queryKey: ['financial-totals'],
     queryFn: async () => {
       console.log('Fetching financial totals');
       
-      // Fetch all payments with pagination
+      // Get total counts first
+      const { count: paymentsCount } = await supabase
+        .from('payment_requests')
+        .select('*', { count: 'exact', head: true });
+
+      const { count: collectorsCount } = await supabase
+        .from('members_collectors')
+        .select('*', { count: 'exact', head: true });
+
+      const { count: membersCount } = await supabase
+        .from('members')
+        .select('*', { count: 'exact', head: true });
+
+      console.log('Total counts:', { paymentsCount, collectorsCount, membersCount });
+
+      // Fetch all payments with proper pagination
       let allPayments = [];
       let page = 0;
       const pageSize = 1000;
+      const totalPages = Math.ceil((paymentsCount || 0) / pageSize);
       
-      while (true) {
-        const { data: payments, error: paymentsError, count } = await supabase
+      for (let page = 0; page < totalPages; page++) {
+        const { data: payments, error: paymentsError } = await supabase
           .from('payment_requests')
-          .select('amount, status, payment_type', { count: 'exact' })
+          .select('amount, status, payment_type')
           .range(page * pageSize, (page + 1) * pageSize - 1);
         
         if (paymentsError) {
@@ -28,18 +44,15 @@ const CollectorFinancialsView = () => {
           throw paymentsError;
         }
 
-        if (!payments || payments.length === 0) break;
-        
+        if (!payments) break;
         allPayments = [...allPayments, ...payments];
-        if (payments.length < pageSize) break;
-        page++;
       }
 
-      // Fetch all collectors with pagination
+      // Fetch all collectors with proper pagination
       let allCollectors = [];
-      page = 0;
+      const totalCollectorPages = Math.ceil((collectorsCount || 0) / pageSize);
       
-      while (true) {
+      for (let page = 0; page < totalCollectorPages; page++) {
         const { data: collectors, error: collectorsError } = await supabase
           .from('members_collectors')
           .select('*')
@@ -50,18 +63,15 @@ const CollectorFinancialsView = () => {
           throw collectorsError;
         }
 
-        if (!collectors || collectors.length === 0) break;
-        
+        if (!collectors) break;
         allCollectors = [...allCollectors, ...collectors];
-        if (collectors.length < pageSize) break;
-        page++;
       }
 
-      // Fetch all members with pagination
+      // Fetch all members with proper pagination
       let allMembers = [];
-      page = 0;
+      const totalMemberPages = Math.ceil((membersCount || 0) / pageSize);
       
-      while (true) {
+      for (let page = 0; page < totalMemberPages; page++) {
         const { data: members, error: membersError } = await supabase
           .from('members')
           .select('yearly_payment_amount, emergency_collection_amount, yearly_payment_status, emergency_collection_status')
@@ -72,16 +82,15 @@ const CollectorFinancialsView = () => {
           throw membersError;
         }
 
-        if (!members || members.length === 0) break;
-        
+        if (!members) break;
         allMembers = [...allMembers, ...members];
-        if (members.length < pageSize) break;
-        page++;
       }
 
-      console.log('Total payments found:', allPayments.length);
-      console.log('Total collectors found:', allCollectors.length);
-      console.log('Total members found:', allMembers.length);
+      console.log('Total items fetched:', {
+        payments: allPayments.length,
+        collectors: allCollectors.length,
+        members: allMembers.length
+      });
 
       const totalAmount = allPayments.reduce((sum, payment) => 
         payment.status === 'approved' ? sum + Number(payment.amount) : sum, 0
@@ -111,6 +120,10 @@ const CollectorFinancialsView = () => {
       };
     }
   });
+
+  if (isLoading) {
+    return <div className="p-4 text-white">Loading financial data...</div>;
+  }
 
   return (
     <div className="space-y-3 sm:space-y-4 md:space-y-6 p-2 sm:p-3 md:p-4">
