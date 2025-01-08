@@ -23,4 +23,26 @@ describe('AuditLogsView', () => {
     fireEvent.click(monitoringTab);
     expect(monitoringTab).toHaveAttribute('aria-selected', 'true');
   });
+
+  it('displays the correct content for each tab', () => {
+    // Check Audit Logs tab content
+    expect(screen.getByRole('tab', { name: /audit logs/i })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByTestId('audit-logs-list')).toBeInTheDocument();
+
+    // Switch to Monitoring Logs tab
+    const monitoringTab = screen.getByRole('tab', { name: /monitoring logs/i });
+    fireEvent.click(monitoringTab);
+    expect(screen.getByTestId('monitoring-logs-list')).toBeInTheDocument();
+  });
+
+  it('maintains state when switching tabs', () => {
+    const auditTab = screen.getByRole('tab', { name: /audit logs/i });
+    const monitoringTab = screen.getByRole('tab', { name: /monitoring logs/i });
+
+    fireEvent.click(monitoringTab);
+    fireEvent.click(auditTab);
+
+    expect(auditTab).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByTestId('audit-logs-list')).toBeInTheDocument();
+  });
 });

@@ -28,6 +28,27 @@ export const mockAuditLogs = [
   }
 ];
 
+export const mockMonitoringLogs = [
+  {
+    id: '1',
+    timestamp: '2024-03-20T10:00:00Z',
+    event_type: 'system_performance',
+    metric_name: 'cpu_usage',
+    metric_value: 75.5,
+    details: { core: 1, process: 'node' },
+    severity: 'warning'
+  },
+  {
+    id: '2',
+    timestamp: '2024-03-20T11:00:00Z',
+    event_type: 'api_latency',
+    metric_name: 'response_time',
+    metric_value: 250,
+    details: { endpoint: '/api/users', method: 'GET' },
+    severity: 'info'
+  }
+];
+
 export const mockSupabaseClient = {
   from: vi.fn().mockReturnValue({
     select: vi.fn().mockReturnValue({

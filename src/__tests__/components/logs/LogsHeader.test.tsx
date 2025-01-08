@@ -19,4 +19,19 @@ describe('LogsHeader', () => {
     expect(screen.getByText(defaultProps.title)).toHaveClass('text-2xl', 'font-bold');
     expect(screen.getByText(defaultProps.subtitle)).toHaveClass('text-muted-foreground');
   });
+
+  it('renders with long text correctly', () => {
+    const longProps = {
+      title: 'Very Long Title '.repeat(10),
+      subtitle: 'Very Long Subtitle '.repeat(10)
+    };
+    render(<LogsHeader {...longProps} />);
+    expect(screen.getByText(longProps.title)).toBeInTheDocument();
+    expect(screen.getByText(longProps.subtitle)).toBeInTheDocument();
+  });
+
+  it('handles empty strings gracefully', () => {
+    render(<LogsHeader title="" subtitle="" />);
+    expect(screen.getByRole('heading')).toBeInTheDocument();
+  });
 });

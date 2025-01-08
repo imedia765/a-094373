@@ -13,6 +13,7 @@ describe('LogsTabs', () => {
 
   beforeEach(() => {
     render(<LogsTabs {...defaultProps} />);
+    mockOnTabChange.mockClear();
   });
 
   it('renders all tab options', () => {
@@ -29,5 +30,25 @@ describe('LogsTabs', () => {
     const monitoringTab = screen.getByRole('tab', { name: /monitoring logs/i });
     fireEvent.click(monitoringTab);
     expect(mockOnTabChange).toHaveBeenCalledWith(LOGS_TABS.MONITORING);
+  });
+
+  it('applies correct styling to active tab', () => {
+    const activeTab = screen.getByRole('tab', { name: /audit logs/i });
+    expect(activeTab).toHaveClass('text-dashboard-accent1');
+  });
+
+  it('applies correct styling to inactive tab', () => {
+    const inactiveTab = screen.getByRole('tab', { name: /monitoring logs/i });
+    expect(inactiveTab).toHaveClass('text-dashboard-text');
+  });
+
+  it('maintains tab state after re-render', () => {
+    const { rerender } = render(<LogsTabs {...defaultProps} />);
+    const monitoringTab = screen.getByRole('tab', { name: /monitoring logs/i });
+    
+    fireEvent.click(monitoringTab);
+    rerender(<LogsTabs {...defaultProps} activeTab={LOGS_TABS.MONITORING} />);
+    
+    expect(monitoringTab).toHaveAttribute('aria-selected', 'true');
   });
 });
