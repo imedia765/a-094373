@@ -5,6 +5,7 @@ import { AuditLogsList } from './logs/AuditLogsList';
 import MonitoringLogsList from './logs/MonitoringLogsList';
 import { DebugConsole } from './logs/DebugConsole';
 import { LOGS_TABS, LogsTabsType } from '@/constants/logs';
+import { TestRunner } from './logs/TestRunner';
 
 const AuditLogsView = () => {
   const [activeTab, setActiveTab] = useState<LogsTabsType>(LOGS_TABS.AUDIT);
@@ -25,6 +26,7 @@ const AuditLogsView = () => {
       {activeTab === LOGS_TABS.AUDIT && <AuditLogsList />}
       {activeTab === LOGS_TABS.MONITORING && <MonitoringLogsList />}
       
+      <TestRunner />
       <DebugConsole logs={debugLogs} />
     </div>
   );

@@ -57,15 +57,15 @@ export const AuditLogsList: React.FC = () => {
   }, [toast]);
 
   const getSeverityClass = (severity: string) => {
-    switch (severity) {
+    switch (severity.toLowerCase()) {
       case 'warning':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-dashboard-warning text-black';
       case 'error':
-        return 'bg-red-100 text-red-800';
+        return 'bg-dashboard-error text-white';
       case 'critical':
-        return 'bg-red-200 text-red-900';
+        return 'bg-red-800 text-white';
       default:
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-dashboard-accent1 text-white';
     }
   };
 
@@ -74,20 +74,20 @@ export const AuditLogsList: React.FC = () => {
   };
 
   return (
-    <div className="border rounded-lg p-4">
-      <h2 className="text-lg font-semibold mb-4">Audit Logs</h2>
+    <div className="dashboard-card">
+      <h2 className="text-lg font-semibold mb-4 text-dashboard-accent1">Audit Logs</h2>
       <ScrollArea className="h-[600px]">
         <div className="space-y-2">
           {logs.length === 0 ? (
-            <p className="text-muted-foreground">No audit logs available</p>
+            <p className="text-dashboard-muted">No audit logs available</p>
           ) : (
             logs.map((log) => (
               <div
                 key={log.id}
-                className="p-3 bg-card rounded-md shadow-sm"
+                className="p-3 glass-card hover:border-dashboard-accent1 transition-all duration-300"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">
+                  <span className="text-sm font-medium text-dashboard-text">
                     {formatTimestamp(log.timestamp)}
                   </span>
                   <span
@@ -98,33 +98,33 @@ export const AuditLogsList: React.FC = () => {
                   </span>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm">
-                    <span className="font-medium">Operation:</span> {log.operation}
+                  <p className="text-sm text-dashboard-text">
+                    <span className="font-medium text-dashboard-accent2">Operation:</span> {log.operation}
                   </p>
-                  <p className="text-sm">
-                    <span className="font-medium">Table:</span> {log.table_name}
+                  <p className="text-sm text-dashboard-text">
+                    <span className="font-medium text-dashboard-accent2">Table:</span> {log.table_name}
                   </p>
                   {log.record_id && (
-                    <p className="text-sm">
-                      <span className="font-medium">Record ID:</span> {log.record_id}
+                    <p className="text-sm text-dashboard-text">
+                      <span className="font-medium text-dashboard-accent2">Record ID:</span> {log.record_id}
                     </p>
                   )}
                   {log.old_values && (
                     <details className="text-sm">
-                      <summary className="cursor-pointer hover:text-primary">
+                      <summary className="cursor-pointer text-dashboard-accent1 hover:text-dashboard-highlight">
                         Old Values
                       </summary>
-                      <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-x-auto">
+                      <pre className="mt-2 p-2 bg-dashboard-card rounded text-xs overflow-x-auto text-dashboard-text">
                         {JSON.stringify(log.old_values, null, 2)}
                       </pre>
                     </details>
                   )}
                   {log.new_values && (
                     <details className="text-sm">
-                      <summary className="cursor-pointer hover:text-primary">
+                      <summary className="cursor-pointer text-dashboard-accent1 hover:text-dashboard-highlight">
                         New Values
                       </summary>
-                      <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-x-auto">
+                      <pre className="mt-2 p-2 bg-dashboard-card rounded text-xs overflow-x-auto text-dashboard-text">
                         {JSON.stringify(log.new_values, null, 2)}
                       </pre>
                     </details>
