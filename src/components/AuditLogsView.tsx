@@ -12,22 +12,33 @@ const AuditLogsView = () => {
   const [debugLogs] = useState(['Debug logging initialized', 'Real-time subscriptions active']);
 
   return (
-    <div className="space-y-6">
-      <LogsHeader 
-        title="System Logs"
-        subtitle="View and manage system audit and monitoring logs"
-      />
-      
-      <LogsTabs
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+      <div className="bg-dashboard-card rounded-lg p-6 shadow-lg">
+        <LogsHeader 
+          title="System Logs"
+          subtitle="View and manage system audit and monitoring logs"
+        />
+        
+        <div className="mt-6">
+          <LogsTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        </div>
+      </div>
 
-      {activeTab === LOGS_TABS.AUDIT && <AuditLogsList />}
-      {activeTab === LOGS_TABS.MONITORING && <MonitoringLogsList />}
-      
-      <TestRunner />
-      <DebugConsole logs={debugLogs} />
+      <div className="grid grid-cols-1 gap-8">
+        <TestRunner />
+        
+        <div className="bg-dashboard-card rounded-lg shadow-lg">
+          {activeTab === LOGS_TABS.AUDIT && <AuditLogsList />}
+          {activeTab === LOGS_TABS.MONITORING && <MonitoringLogsList />}
+        </div>
+        
+        <div className="bg-dashboard-card rounded-lg shadow-lg p-6">
+          <DebugConsole logs={debugLogs} />
+        </div>
+      </div>
     </div>
   );
 };
