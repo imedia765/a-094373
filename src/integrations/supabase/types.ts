@@ -90,6 +90,33 @@ export type Database = {
         }
         Relationships: []
       }
+      git_operations_logs: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          message: string | null
+          operation_type: string
+          status: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          message?: string | null
+          operation_type: string
+          status: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          message?: string | null
+          operation_type?: string
+          status?: string
+        }
+        Relationships: []
+      }
       members: {
         Row: {
           address: string | null
@@ -421,14 +448,6 @@ export type Database = {
           table_name: string
           name: string
           command: string
-        }[]
-      }
-      get_tables_info: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          name: string
-          columns: Json
-          rls_enabled: boolean
         }[]
       }
       is_admin: {

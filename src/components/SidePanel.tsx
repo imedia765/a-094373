@@ -7,12 +7,10 @@ import {
   History,
   Settings,
   Wallet,
-  FileText,
   LogOut
 } from "lucide-react";
 import { UserRole } from "@/hooks/useRoleAccess";
-import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useAuthSession } from "@/hooks/useAuthSession";
 
 interface SidePanelProps {
   onTabChange: (tab: string) => void;
@@ -22,12 +20,7 @@ interface SidePanelProps {
 const SidePanel = ({ onTabChange, userRole }: SidePanelProps) => {
   const isAdmin = userRole === 'admin';
   const isCollector = userRole === 'collector';
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/login');
-  };
+  const { handleSignOut } = useAuthSession();
 
   return (
     <div className="flex flex-col h-full bg-dashboard-card border-r border-white/10">
@@ -76,15 +69,6 @@ const SidePanel = ({ onTabChange, userRole }: SidePanelProps) => {
               <Button
                 variant="ghost"
                 className="w-full justify-start gap-2 text-sm"
-                onClick={() => onTabChange('reports')}
-              >
-                <FileText className="h-4 w-4" />
-                Reports
-              </Button>
-
-              <Button
-                variant="ghost"
-                className="w-full justify-start gap-2 text-sm"
                 onClick={() => onTabChange('audit')}
               >
                 <History className="h-4 w-4" />
@@ -108,7 +92,7 @@ const SidePanel = ({ onTabChange, userRole }: SidePanelProps) => {
         <Button
           variant="ghost"
           className="w-full justify-start gap-2 text-sm text-dashboard-muted hover:text-white"
-          onClick={handleLogout}
+          onClick={handleSignOut}
         >
           <LogOut className="h-4 w-4" />
           Logout

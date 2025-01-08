@@ -7,19 +7,18 @@ import MemberSearch from '@/components/MemberSearch';
 import AuditLogsView from '@/components/AuditLogsView';
 import SystemToolsView from '@/components/SystemToolsView';
 import CollectorFinancialsView from '@/components/CollectorFinancialsView';
-import ReportsView from '@/components/ReportsView';
-import { useRoleAccess, UserRole } from '@/hooks/useRoleAccess';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { useToast } from "@/hooks/use-toast";
 import MainLayout from '@/components/layout/MainLayout';
 import { useQueryClient } from '@tanstack/react-query';
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { userRole, roleLoading, error: roleError, canAccessTab } = useRoleAccess();
+  const { userRole, roleLoading, canAccessTab } = useRoleAccess();
   const queryClient = useQueryClient();
 
   const handleSessionError = async () => {
@@ -99,22 +98,6 @@ const Index = () => {
     }
   }, [activeTab, roleLoading, userRole]);
 
-  if (roleLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-dashboard-dark">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-dashboard-accent1"></div>
-      </div>
-    );
-  }
-
-  if (roleError) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-dashboard-dark">
-        <div className="text-white">Error loading user role. Please try refreshing the page.</div>
-      </div>
-    );
-  }
-
   const renderContent = () => {
     if (!canAccessTab(activeTab)) {
       return <DashboardView />;
@@ -134,13 +117,11 @@ const Index = () => {
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
             />
-            <MembersList searchTerm={searchTerm} userRole={userRole as UserRole} />
+            <MembersList searchTerm={searchTerm} userRole={userRole} />
           </>
         );
       case 'financials':
         return <CollectorFinancialsView />;
-      case 'reports':
-        return <ReportsView />;
       case 'audit':
         return <AuditLogsView />;
       case 'system':
@@ -153,7 +134,7 @@ const Index = () => {
   return (
     <MainLayout
       activeTab={activeTab}
-      userRole={userRole as UserRole}
+      userRole={userRole}
       isSidebarOpen={isSidebarOpen}
       onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
       onTabChange={setActiveTab}

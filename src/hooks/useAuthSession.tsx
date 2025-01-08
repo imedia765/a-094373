@@ -1,65 +1,77 @@
 import { useState, useEffect } from "react";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 
-export const useAuthSession = () => {
+export function useAuthSession() {
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(false);
-  const queryClient = useQueryClient();
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
-  const handleAuthError = async (error: any) => {
-    console.error('Auth error:', error);
-    
-    const errorMessage = typeof error === 'string' ? error : error.message || error.error_description;
-    
-    if (errorMessage?.includes('Failed to fetch') || 
-        errorMessage?.includes('session_not_found') || 
-        errorMessage?.includes('JWT expired') ||
-        errorMessage?.includes('Invalid Refresh Token') ||
-        errorMessage?.includes('refresh_token_not_found')) {
-      console.log('Session error, signing out...');
-      setSession(null);
-      await queryClient.resetQueries();
-      localStorage.clear();
-      await supabase.auth.signOut();
+  const handleSignOut = async () => {
+    try {
+      setLoading(true);
+      console.log('Starting sign out process...');
       
+      // First clear all queries and cache
+      await queryClient.resetQueries();
+      await queryClient.clear();
+      console.log('Query cache cleared');
+
+      // Clear local storage
+      localStorage.clear();
+      console.log('Local storage cleared');
+
+      // Reset session state before signing out
+      setSession(null);
+      console.log('Session state reset');
+
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      console.log('Signed out from Supabase');
+
+      // Navigate to login page
+      window.location.href = '/login';
+      console.log('Redirecting to login page');
+      
+    } catch (error: any) {
+      console.error('Error during sign out:', error);
       toast({
-        title: "Session expired",
-        description: "Please sign in again",
+        title: "Error signing out",
+        description: error.message,
         variant: "destructive",
       });
-
-      window.location.href = '/login';
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     let mounted = true;
 
-    // Get initial session
     const initializeSession = async () => {
       try {
         setLoading(true);
-        console.log('Checking for existing session...');
-        const { data: { session: existingSession }, error } = await supabase.auth.getSession();
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        
         if (error) throw error;
         
-        if (mounted && existingSession?.user) {
-          console.log('Found existing session for user:', existingSession.user.id);
-          
-          // Verify session is still valid with a test request
-          const { error: userError } = await supabase.auth.getUser();
-          if (userError) throw userError;
-          
-          setSession(existingSession);
+        if (mounted) {
+          setSession(currentSession);
+          if (currentSession?.user) {
+            console.log('Session initialized for user:', currentSession.user.id);
+          }
         }
       } catch (error: any) {
-        console.error('Session check error:', error);
+        console.error('Session initialization error:', error);
         if (mounted) {
-          await handleAuthError(error);
+          setSession(null);
+          window.location.href = '/login';
         }
       } finally {
         if (mounted) {
@@ -68,42 +80,36 @@ export const useAuthSession = () => {
       }
     };
 
-    initializeSession();
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
       if (!mounted) return;
+
+      console.log('Auth state changed:', event, currentSession?.user?.id);
       
-      console.log('Auth state changed:', _event, currentSession?.user?.id);
-      
-      if (_event === 'SIGNED_OUT') {
-        console.log('User signed out, clearing session and queries');
-        setSession(null);
-        queryClient.resetQueries();
+      if (event === 'SIGNED_OUT') {
+        // Clear everything on sign out
+        await queryClient.resetQueries();
+        await queryClient.clear();
         localStorage.clear();
+        setSession(null);
         window.location.href = '/login';
         return;
       }
 
-      if (_event === 'SIGNED_IN' || _event === 'TOKEN_REFRESHED') {
-        console.log('Setting session after', _event);
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         setSession(currentSession);
-        if (_event === 'SIGNED_IN') {
-          queryClient.resetQueries();
-        }
-        return;
+        await queryClient.invalidateQueries();
       }
-
-      setSession(currentSession);
+      
+      setLoading(false);
     });
+
+    initializeSession();
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [queryClient, toast]);
+  }, [queryClient, toast, navigate]);
 
-  return { session, loading };
-};
+  return { session, loading, handleSignOut };
+}
