@@ -94,6 +94,7 @@ export type Database = {
         Row: {
           created_at: string | null
           created_by: string | null
+          error_details: string | null
           id: string
           message: string | null
           operation_type: string
@@ -102,6 +103,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           created_by?: string | null
+          error_details?: string | null
           id?: string
           message?: string | null
           operation_type: string
@@ -110,10 +112,38 @@ export type Database = {
         Update: {
           created_at?: string | null
           created_by?: string | null
+          error_details?: string | null
           id?: string
           message?: string | null
           operation_type?: string
           status?: string
+        }
+        Relationships: []
+      }
+      git_repository_configs: {
+        Row: {
+          branch: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          repo_url: string
+        }
+        Insert: {
+          branch?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          repo_url: string
+        }
+        Update: {
+          branch?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          repo_url?: string
         }
         Relationships: []
       }
@@ -428,6 +458,50 @@ export type Database = {
           details: Json
         }[]
       }
+      check_api_health: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          metric_name: string
+          current_value: number
+          threshold: number
+          status: string
+          details: Json
+        }[]
+      }
+      check_auth_flow: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          check_type: string
+          status: string
+          details: Json
+        }[]
+      }
+      check_critical_logic: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          check_type: string
+          status: string
+          details: Json
+        }[]
+      }
+      check_data_integrity: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          check_type: string
+          status: string
+          details: Json
+        }[]
+      }
+      check_error_rates: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          metric_name: string
+          current_value: number
+          threshold: number
+          status: string
+          details: Json
+        }[]
+      }
       check_member_numbers: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -438,9 +512,55 @@ export type Database = {
           details: Json
         }[]
       }
+      check_rbac: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          check_type: string
+          status: string
+          details: Json
+        }[]
+      }
+      check_resource_usage: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          metric_name: string
+          current_value: number
+          threshold: number
+          status: string
+          details: Json
+        }[]
+      }
+      check_system_performance: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          metric_name: string
+          current_value: number
+          threshold: number
+          status: string
+          details: Json
+        }[]
+      }
+      check_user_activity: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          metric_name: string
+          current_value: number
+          threshold: number
+          status: string
+          details: Json
+        }[]
+      }
       generate_full_backup: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      get_audit_activity_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          hour_bucket: string
+          operation: string
+          count: number
+        }[]
       }
       get_rls_policies: {
         Args: Record<PropertyKey, never>
@@ -448,6 +568,23 @@ export type Database = {
           table_name: string
           name: string
           command: string
+        }[]
+      }
+      get_system_metrics_history: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          recorded_at: string
+          metric_name: string
+          metric_value: number
+          category: string
+        }[]
+      }
+      get_tables_info: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          name: string
+          columns: Json
+          rls_enabled: boolean
         }[]
       }
       is_admin: {
@@ -478,6 +615,18 @@ export type Database = {
         }
         Returns: string
       }
+      run_combined_system_checks: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          check_type: string
+          metric_name: string
+          current_value: number
+          threshold: number
+          status: string
+          details: Json
+          test_category: string
+        }[]
+      }
       update_collector_profiles: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -502,6 +651,11 @@ export type Database = {
         | "user_activity"
         | "resource_usage"
       payment_method: "bank_transfer" | "cash"
+      performance_metric:
+        | "response_time"
+        | "query_performance"
+        | "connection_count"
+        | "cache_hit_ratio"
       severity_level: "info" | "warning" | "error" | "critical"
     }
     CompositeTypes: {
