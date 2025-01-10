@@ -16,8 +16,8 @@ const PaymentMethodSelector = ({ paymentMethod, onPaymentMethodChange }: Payment
           onClick={() => onPaymentMethodChange('cash')}
           className={`flex-1 h-12 ${
             paymentMethod === 'cash' 
-              ? 'btn-primary' 
-              : 'btn-outline'
+              ? 'bg-[#D3E4FD] hover:bg-[#1EAEDB] text-dashboard-dark' 
+              : 'bg-[#1EAEDB] hover:bg-[#D3E4FD] text-white hover:text-dashboard-dark'
           }`}
         >
           <Banknote className="w-5 h-5 mr-2" />
@@ -28,8 +28,8 @@ const PaymentMethodSelector = ({ paymentMethod, onPaymentMethodChange }: Payment
           onClick={() => onPaymentMethodChange('bank_transfer')}
           className={`flex-1 h-12 ${
             paymentMethod === 'bank_transfer' 
-              ? 'btn-primary' 
-              : 'btn-outline'
+              ? 'bg-[#D3E4FD] hover:bg-[#1EAEDB] text-dashboard-dark' 
+              : 'bg-[#1EAEDB] hover:bg-[#D3E4FD] text-white hover:text-dashboard-dark'
           }`}
         >
           <CreditCard className="w-4 h-4 mr-2" />
